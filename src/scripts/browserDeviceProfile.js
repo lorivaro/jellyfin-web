@@ -8,20 +8,21 @@ import browser from './browser';
     }
 
     function canPlayHevc(videoTestElement, options) {
-        if (browser.tizen || browser.xboxOne || browser.web0s || options.supportsHevc) {
-            return true;
-        }
+        return false;
+        // if (browser.tizen || browser.xboxOne || browser.web0s || options.supportsHevc) {
+        //     return true;
+        // }
 
-        if (browser.ps4) {
-            return false;
-        }
+        // if (browser.ps4) {
+        //     return false;
+        // }
 
-        // hevc main level 4.0
-        return !!videoTestElement.canPlayType &&
-        (videoTestElement.canPlayType('video/mp4; codecs="hvc1.1.L120"').replace(/no/, '') ||
-        videoTestElement.canPlayType('video/mp4; codecs="hev1.1.L120"').replace(/no/, '') ||
-        videoTestElement.canPlayType('video/mp4; codecs="hvc1.1.0.L120"').replace(/no/, '') ||
-        videoTestElement.canPlayType('video/mp4; codecs="hev1.1.0.L120"').replace(/no/, ''));
+        // // hevc main level 4.0
+        // return !!videoTestElement.canPlayType &&
+        // (videoTestElement.canPlayType('video/mp4; codecs="hvc1.1.L120"').replace(/no/, '') ||
+        // videoTestElement.canPlayType('video/mp4; codecs="hev1.1.L120"').replace(/no/, '') ||
+        // videoTestElement.canPlayType('video/mp4; codecs="hvc1.1.0.L120"').replace(/no/, '') ||
+        // videoTestElement.canPlayType('video/mp4; codecs="hev1.1.0.L120"').replace(/no/, ''));
     }
 
     let _supportsTextTracks;
