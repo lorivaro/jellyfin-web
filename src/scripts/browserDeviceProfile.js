@@ -7,7 +7,7 @@ function canPlayH264(videoTestElement) {
 }
 
 function canPlayHevc(videoTestElement, options) {
-    if (browser.tizen || browser.xboxOne || browser.web0s || options.supportsHevc) {
+    if (browser.tizen || browser.xboxOne /* || browser.web0s */ || options.supportsHevc) {
         return true;
     }
 
