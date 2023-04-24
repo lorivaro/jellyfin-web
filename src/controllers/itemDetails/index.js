@@ -1,5 +1,6 @@
 import { intervalToDuration } from 'date-fns';
 import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import escapeHtml from 'escape-html';
 import isEqual from 'lodash-es/isEqual';
 
@@ -112,6 +113,11 @@ function getProgramScheduleHtml(items, action = 'none') {
     });
 }
 
+function getSelectedMediaSource(page, mediaSources) {
+    const mediaSourceId = page.querySelector('.selectSource').value;
+    return mediaSources.filter(m => m.Id === mediaSourceId)[0];
+}
+
 function renderSeriesTimerSchedule(page, apiClient, seriesTimerId) {
     apiClient.getLiveTvTimers({
         UserId: apiClient.getCurrentUserId(),
@@ -205,10 +211,7 @@ function renderTrackSelections(page, instance, item, forceReload) {
 }
 
 function renderVideoSelections(page, mediaSources) {
-    const mediaSourceId = page.querySelector('.selectSource').value;
-    const mediaSource = mediaSources.filter(function (m) {
-        return m.Id === mediaSourceId;
-    })[0];
+    const mediaSource = getSelectedMediaSource(page, mediaSources);
 
     const tracks = mediaSource.MediaStreams.filter(function (m) {
         return m.Type === 'Video';
@@ -242,10 +245,8 @@ function renderVideoSelections(page, mediaSources) {
 }
 
 function renderAudioSelections(page, mediaSources) {
-    const mediaSourceId = page.querySelector('.selectSource').value;
-    const mediaSource = mediaSources.filter(function (m) {
-        return m.Id === mediaSourceId;
-    })[0];
+    const mediaSource = getSelectedMediaSource(page, mediaSources);
+
     const tracks = mediaSource.MediaStreams.filter(function (m) {
         return m.Type === 'Audio';
     });
@@ -272,10 +273,8 @@ function renderAudioSelections(page, mediaSources) {
 }
 
 function renderSubtitleSelections(page, mediaSources) {
-    const mediaSourceId = page.querySelector('.selectSource').value;
-    const mediaSource = mediaSources.filter(function (m) {
-        return m.Id === mediaSourceId;
-    })[0];
+    const mediaSource = getSelectedMediaSource(page, mediaSources);
+
     const tracks = mediaSource.MediaStreams.filter(function (m) {
         return m.Type === 'Subtitle';
     });
@@ -877,7 +876,7 @@ function renderOverview(page, item) {
     const overviewElements = page.querySelectorAll('.overview');
 
     if (overviewElements.length > 0) {
-        const overview = DOMPurify.sanitize(item.Overview || '');
+        const overview = DOMPurify.sanitize(marked(item.Overview || ''));
 
         if (overview) {
             for (const overviewElemnt of overviewElements) {
@@ -1156,12 +1155,7 @@ function renderMoreFromArtist(view, item, apiClient) {
     const section = view.querySelector('.moreFromArtistSection');
 
     if (section) {
-        if (item.Type === 'MusicArtist') {
-            if (!apiClient.isMinServerVersion('3.4.1.19')) {
-                section.classList.add('hide');
-                return;
-            }
-        } else if (item.Type !== 'MusicAlbum' || !item.AlbumArtists || !item.AlbumArtists.length) {
+        if (item.Type !== 'MusicArtist' && (item.Type !== 'MusicAlbum' || !item.AlbumArtists || !item.AlbumArtists.length)) {
             section.classList.add('hide');
             return;
         }
@@ -2033,6 +2027,7 @@ export default function (view, params) {
             renderVideoSelections(view, self._currentPlaybackMediaSources);
             renderAudioSelections(view, self._currentPlaybackMediaSources);
             renderSubtitleSelections(view, self._currentPlaybackMediaSources);
+            updateMiscInfo();
         });
         view.addEventListener('viewshow', function (e) {
             const page = this;
@@ -2064,6 +2059,15 @@ export default function (view, params) {
             currentItem = null;
             self._currentPlaybackMediaSources = null;
             self.currentRecordingFields = null;
+        });
+    }
+
+    function updateMiscInfo() {
+        const selectedMediaSource = getSelectedMediaSource(view, self._currentPlaybackMediaSources);
+        renderMiscInfo(view, {
+            // patch currentItem (primary item) with details from the selected MediaSource:
+            ...currentItem,
+            ...selectedMediaSource
         });
     }
 

@@ -75,7 +75,7 @@ const Scroller: FC<ScrollerProps> = ({
             return 0;
         }
 
-        if (isNaN(parseInt(value))) {
+        if (isNaN(parseInt(value, 10))) {
             return 0;
         }
 
@@ -229,8 +229,8 @@ const Scroller: FC<ScrollerProps> = ({
     return (
         <>
             {
-                showControls && scrollState.scrollWidth > scrollState.scrollSize + 20 &&
-                    <ScrollButtons
+                showControls && scrollState.scrollWidth > scrollState.scrollSize + 20
+                    && <ScrollButtons
                         scrollRef={scrollRef}
                         scrollerFactoryRef={scrollerFactoryRef}
                         scrollState={scrollState}
