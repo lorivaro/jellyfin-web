@@ -1,9 +1,10 @@
 import browser from '../scripts/browser';
 import { copy } from '../scripts/clipboard';
+import dom from '../scripts/dom';
 import globalize from '../scripts/globalize';
 import actionsheet from './actionSheet/actionSheet';
 import { appHost } from './apphost';
-import { appRouter } from './appRouter';
+import { appRouter } from './router/appRouter';
 import itemHelper from './itemHelper';
 import { playbackManager } from './playback/playbackmanager';
 import ServerConnections from './ServerConnections';
@@ -98,7 +99,17 @@ export function getCommands(options) {
     }
 
     if (!browser.tv) {
-        if (itemHelper.supportsAddingToCollection(item) && options.EnableCollectionManagement) {
+        // Multiselect is currrently only ran on long clicks of card components
+        // This disables Select on any context menu not originating from a card i.e songs
+        if (options.positionTo && (dom.parentWithClass(options.positionTo, 'card') !== null)) {
+            commands.push({
+                name:  globalize.translate('Select'),
+                id: 'multiSelect',
+                icon: 'library_add_check'
+            });
+        }
+
+        if (itemHelper.supportsAddingToCollection(item) && (user.Policy.IsAdministrator || user.Policy.EnableCollectionManagement)) {
             commands.push({
                 name: globalize.translate('AddToCollection'),
                 id: 'addtocollection',
@@ -334,8 +345,8 @@ function executeCommand(item, id, options) {
                 });
                 break;
             case 'addtoplaylist':
-                import('./playlisteditor/playlisteditor').then(({ default: playlistEditor }) => {
-                    new playlistEditor({
+                import('./playlisteditor/playlisteditor').then(({ default: PlaylistEditor }) => {
+                    new PlaylistEditor({
                         items: [itemId],
                         serverId: serverId
                     }).then(getResolveFunction(resolve, id, true), getResolveFunction(resolve, id));
@@ -430,6 +441,12 @@ function executeCommand(item, id, options) {
             case 'moremediainfo':
                 import('./itemMediaInfo/itemMediaInfo').then((itemMediaInfo) => {
                     itemMediaInfo.show(itemId, serverId).then(getResolveFunction(resolve, id), getResolveFunction(resolve, id));
+                });
+                break;
+            case 'multiSelect':
+                import('./multiSelect/multiSelect').then(({ startMultiSelect: startMultiSelect }) => {
+                    const card = dom.parentWithClass(options.positionTo, 'card');
+                    startMultiSelect(card);
                 });
                 break;
             case 'refresh':
@@ -613,8 +630,8 @@ function deleteItem(apiClient, item) {
 }
 
 function refresh(apiClient, item) {
-    import('./refreshdialog/refreshdialog').then(({ default: refreshDialog }) => {
-        new refreshDialog({
+    import('./refreshdialog/refreshdialog').then(({ default: RefreshDialog }) => {
+        new RefreshDialog({
             itemIds: [item.Id],
             serverId: apiClient.serverInfo().Id,
             mode: item.Type === 'CollectionFolder' ? 'scan' : null

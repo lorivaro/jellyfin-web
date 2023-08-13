@@ -10,6 +10,7 @@ import '../../styles/scrollstyles.scss';
 import '../../elements/emby-itemscontainer/emby-itemscontainer';
 import '../../elements/emby-tabs/emby-tabs';
 import '../../elements/emby-button/emby-button';
+import { LibraryTab } from '../../types/libraryTab.ts';
 import Dashboard from '../../utils/dashboard';
 
 function enableScrollX() {
@@ -201,15 +202,15 @@ function setScrollClasses(elem, scrollX) {
 
 function getDefaultTabIndex(folderId) {
     switch (userSettings.get('landing-' + folderId)) {
-        case 'guide':
+        case LibraryTab.Guide:
             return 1;
-        case 'channels':
+        case LibraryTab.Channels:
             return 2;
-        case 'recordings':
+        case LibraryTab.Recordings:
             return 3;
-        case 'schedule':
+        case LibraryTab.Schedule:
             return 4;
-        case 'series':
+        case LibraryTab.Series:
             return 5;
         default:
             return 0;
@@ -228,7 +229,7 @@ export default function (view, params) {
     function onTabChange(evt) {
         const previousTabController = tabControllers[parseInt(evt.detail.previousIndex, 10)];
 
-        if (previousTabController && previousTabController.onHide) {
+        if (previousTabController?.onHide) {
             previousTabController.onHide();
         }
 
@@ -273,7 +274,7 @@ export default function (view, params) {
                 break;
         }
 
-        import(`../livetv/${depends}`).then(({ default: controllerFactory }) => {
+        import(`../livetv/${depends}`).then(({ default: ControllerFactory }) => {
             let tabContent;
 
             if (index === 0) {
@@ -289,7 +290,7 @@ export default function (view, params) {
                 if (index === 0) {
                     controller = self;
                 } else {
-                    controller = new controllerFactory(view, params, tabContent);
+                    controller = new ControllerFactory(view, params, tabContent);
                 }
 
                 tabControllers[index] = controller;
@@ -387,7 +388,7 @@ export default function (view, params) {
         inputManager.on(window, onInputCommand);
     });
     view.addEventListener('viewbeforehide', function () {
-        if (currentTabController && currentTabController.onHide) {
+        if (currentTabController?.onHide) {
             currentTabController.onHide();
         }
 

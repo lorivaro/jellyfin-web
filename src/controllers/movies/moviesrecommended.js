@@ -9,6 +9,7 @@ import dom from '../../scripts/dom';
 import imageLoader from '../../components/images/imageLoader';
 import { playbackManager } from '../../components/playback/playbackmanager';
 import globalize from '../../scripts/globalize';
+import { LibraryTab } from '../../types/libraryTab.ts';
 import Dashboard from '../../utils/dashboard';
 import Events from '../../utils/events.ts';
 
@@ -249,16 +250,16 @@ function getTabs() {
 
 function getDefaultTabIndex(folderId) {
     switch (userSettings.get('landing-' + folderId)) {
-        case 'suggestions':
+        case LibraryTab.Suggestions:
             return 1;
 
-        case 'favorites':
+        case LibraryTab.Favorites:
             return 3;
 
-        case 'collections':
+        case LibraryTab.Collections:
             return 4;
 
-        case 'genres':
+        case LibraryTab.Genres:
             return 5;
 
         default:
@@ -313,7 +314,7 @@ export default function (view, params) {
                 break;
         }
 
-        import(`../movies/${depends}`).then(({ default: controllerFactory }) => {
+        import(`../movies/${depends}`).then(({ default: ControllerFactory }) => {
             let tabContent;
 
             if (index === suggestionsTabIndex) {
@@ -329,11 +330,11 @@ export default function (view, params) {
                 if (index === suggestionsTabIndex) {
                     controller = this;
                 } else if (index == 0 || index == 3) {
-                    controller = new controllerFactory(view, params, tabContent, {
+                    controller = new ControllerFactory(view, params, tabContent, {
                         mode: index ? 'favorites' : 'movies'
                     });
                 } else {
-                    controller = new controllerFactory(view, params, tabContent);
+                    controller = new ControllerFactory(view, params, tabContent);
                 }
 
                 tabControllers[index] = controller;

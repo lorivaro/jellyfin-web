@@ -28,8 +28,7 @@ function populateVersions(packageInfo, page, installedPlugin) {
         return b.timestamp < a.timestamp ? -1 : 1;
     });
 
-    for (let i = 0; i < packageInfo.versions.length; i++) {
-        const version = packageInfo.versions[i];
+    for (const version of packageInfo.versions) {
         html += '<option value="' + version.version + '">' + globalize.translate('PluginFromRepo', version.version, version.repositoryName) + '</option>';
     }
 
@@ -65,6 +64,16 @@ function renderPackage(pkg, installedPlugins, page) {
 
     $('#description', page).text(pkg.description);
     $('#developer', page).text(pkg.owner);
+    // This is a hack; the repository name and URL should be part of the global values
+    // for the plugin, not each individual version. So we just use the top (latest)
+    // version to get this information. If it's missing (no versions), then say so.
+    if (pkg.versions.length) {
+        $('#repositoryName', page).text(pkg.versions[0].repositoryName);
+        $('#repositoryUrl', page).text(pkg.versions[0].repositoryUrl);
+    } else {
+        $('#repositoryName', page).text(globalize.translate('Unknown'));
+        $('#repositoryUrl', page).text(globalize.translate('Unknown'));
+    }
 
     if (installedPlugin) {
         const currentVersionText = globalize.translate('MessageYouHaveVersionInstalled', '<strong>' + installedPlugin.Version + '</strong>');
@@ -81,7 +90,7 @@ function alertText(options) {
 }
 
 function performInstallation(page, name, guid, version) {
-    const developer = $('#developer', page).html().toLowerCase();
+    const repositoryUrl = $('#repositoryUrl', page).html().toLowerCase();
 
     const alertCallback = function () {
         loading.show();
@@ -94,7 +103,9 @@ function performInstallation(page, name, guid, version) {
         });
     };
 
-    if (developer !== 'jellyfin') {
+    // Check the repository URL for the official Jellyfin repository domain, or
+    // present the warning for 3rd party plugins.
+    if (!repositoryUrl.startsWith('https://repo.jellyfin.org/')) {
         loading.hide();
         let msg = globalize.translate('MessagePluginInstallDisclaimer');
         msg += '<br/>';

@@ -17,11 +17,12 @@ import keyboardnavigation from '../../../scripts/keyboardNavigation';
 import '../../../styles/scrollstyles.scss';
 import '../../../elements/emby-slider/emby-slider';
 import '../../../elements/emby-button/paper-icon-button-light';
+import '../../../elements/emby-ratingbutton/emby-ratingbutton';
 import '../../../styles/videoosd.scss';
 import ServerConnections from '../../../components/ServerConnections';
 import shell from '../../../scripts/shell';
 import SubtitleSync from '../../../components/subtitlesync/subtitlesync';
-import { appRouter } from '../../../components/appRouter';
+import { appRouter } from '../../../components/router/appRouter';
 import LibraryMenu from '../../../scripts/libraryMenu';
 import { setBackdropTransparency, TRANSPARENCY_LEVEL } from '../../../components/backdrop/backdrop';
 import { pluginManager } from '../../../components/pluginManager';
@@ -132,6 +133,17 @@ export default function (view) {
             endTimeText.innerHTML = '';
             programStartDateMs = 0;
             programEndDateMs = 0;
+        }
+
+        // Set currently playing item for favorite button
+        const btnUserRating = view.querySelector('.btnUserRating');
+
+        if (itemHelper.canRate(currentItem)) {
+            btnUserRating.classList.remove('hide');
+            btnUserRating.setItem(currentItem);
+        } else {
+            btnUserRating.classList.add('hide');
+            btnUserRating.setItem(null);
         }
     }
 
@@ -539,11 +551,11 @@ export default function (view) {
     }
 
     function onBeginFetch() {
-        document.querySelector('.osdMediaStatus').classList.remove('hide');
+        view.querySelector('.osdMediaStatus').classList.remove('hide');
     }
 
     function onEndFetch() {
-        document.querySelector('.osdMediaStatus').classList.add('hide');
+        view.querySelector('.osdMediaStatus').classList.add('hide');
     }
 
     function bindToPlayer(player) {
@@ -654,7 +666,7 @@ export default function (view) {
         if (item.Type === 'TvChannel') {
             const program = item.CurrentProgram;
 
-            if (program && program.EndDate) {
+            if (program?.EndDate) {
                 try {
                     const endDate = datetime.parseISO8601Date(program.EndDate);
 
@@ -1437,7 +1449,7 @@ export default function (view) {
     const btnFastForward = view.querySelector('.btnFastForward');
     const transitionEndEventName = dom.whichTransitionEvent();
     const headerElement = document.querySelector('.skinHeader');
-    const osdBottomElement = document.querySelector('.videoOsdBottom-maincontrols');
+    const osdBottomElement = view.querySelector('.videoOsdBottom-maincontrols');
 
     nowPlayingPositionSlider.enableKeyboardDragging();
     nowPlayingVolumeSlider.enableKeyboardDragging();
@@ -1496,6 +1508,7 @@ export default function (view) {
                 dom.addEventListener(document, 'click', onClickCapture, { capture: true });
             }
         } catch (e) {
+            setBackdropTransparency(TRANSPARENCY_LEVEL.None); // reset state set in viewbeforeshow
             appRouter.goHome();
         }
     });
@@ -1672,7 +1685,7 @@ export default function (view) {
         ticks *= value;
         const item = currentItem;
 
-        if (item && item.Chapters && item.Chapters.length && item.Chapters[0].ImageTag) {
+        if (item?.Chapters?.length && item.Chapters[0].ImageTag) {
             const html = getChapterBubbleHtml(ServerConnections.getApiClient(item.ServerId), item, item.Chapters, ticks);
 
             if (html) {
@@ -1725,6 +1738,9 @@ export default function (view) {
     });
     view.querySelector('.btnAudio').addEventListener('click', showAudioTrackSelection);
     view.querySelector('.btnSubtitles').addEventListener('click', showSubtitleTrackSelection);
+
+    // HACK: Remove `emby-button` from the rating button to make it look like the other buttons
+    view.querySelector('.btnUserRating').classList.remove('emby-button');
 
     // Register to SyncPlay playback events and show big animated icon
     const showIcon = (action) => {

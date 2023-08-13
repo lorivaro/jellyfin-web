@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import ServerConnections from './ServerConnections';
 import viewManager from './viewManager/viewManager';
 import globalize from '../scripts/globalize';
+import type { RestoreViewFailResponse } from '../types/viewManager';
 
 interface ServerContentPageProps {
     view: string
@@ -29,8 +30,8 @@ const ServerContentPage: FunctionComponent<ServerContentPageProps> = ({ view }) 
             };
 
             viewManager.tryRestoreView(viewOptions)
-                .catch(async (result?: any) => {
-                    if (!result || !result.cancelled) {
+                .catch(async (result?: RestoreViewFailResponse) => {
+                    if (!result?.cancelled) {
                         const apiClient = ServerConnections.currentApiClient();
 
                         // Fetch the view html from the server and translate it
@@ -46,12 +47,13 @@ const ServerContentPage: FunctionComponent<ServerContentPageProps> = ({ view }) 
         };
 
         loadPage();
-    }, [
+    },
+    // location.state is NOT included as a dependency here since dialogs will update state while the current view stays the same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
         view,
         location.pathname,
         location.search
-        // location.state is NOT included as a dependency here since dialogs will update state while the current view
-        // stays the same
     ]);
 
     return <></>;

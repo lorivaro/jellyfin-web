@@ -3,7 +3,7 @@ import * as userSettings from './settings/userSettings';
 import browser from './browser';
 
 function canPlayH264(videoTestElement) {
-    return !!(videoTestElement.canPlayType && videoTestElement.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"').replace(/no/, ''));
+    return !!(videoTestElement.canPlayType?.('video/mp4; codecs="avc1.42E01E, mp4a.40.2"').replace(/no/, ''));
 }
 
 function canPlayHevc(videoTestElement, options) {
@@ -122,7 +122,7 @@ function canPlayAudioFormat(format) {
 
         typeString = 'audio/ogg; codecs="opus"';
     } else if (format === 'alac') {
-        if (browser.iOS || browser.osx) {
+        if (browser.iOS || browser.osx && browser.safari) {
             return true;
         }
     } else if (format === 'mp2') {
@@ -687,30 +687,6 @@ export default function (options) {
         });
     });
 
-    if (canPlayMkv && !browser.tizen && options.enableMkvProgressive !== false) {
-        profile.TranscodingProfiles.push({
-            Container: 'mkv',
-            Type: 'Video',
-            AudioCodec: videoAudioCodecs.join(','),
-            VideoCodec: mp4VideoCodecs.join(','),
-            Context: 'Streaming',
-            MaxAudioChannels: physicalAudioChannels.toString(),
-            CopyTimestamps: true
-        });
-    }
-
-    if (canPlayMkv) {
-        profile.TranscodingProfiles.push({
-            Container: 'mkv',
-            Type: 'Video',
-            AudioCodec: videoAudioCodecs.join(','),
-            VideoCodec: mp4VideoCodecs.join(','),
-            Context: 'Static',
-            MaxAudioChannels: physicalAudioChannels.toString(),
-            CopyTimestamps: true
-        });
-    }
-
     if (canPlayHls() && options.enableHls !== false) {
         if (hlsInFmp4VideoCodecs.length && hlsInFmp4VideoAudioCodecs.length && userSettings.preferFmp4HlsContainer() && (browser.safari || browser.tizen || browser.web0s)) {
             profile.TranscodingProfiles.push({
@@ -740,28 +716,6 @@ export default function (options) {
             });
         }
     }
-
-    // Progressive mp4 transcoding
-    if (mp4VideoCodecs.length && videoAudioCodecs.length) {
-        profile.TranscodingProfiles.push({
-            Container: 'mp4',
-            Type: 'Video',
-            AudioCodec: videoAudioCodecs.join(','),
-            VideoCodec: mp4VideoCodecs.join(','),
-            Context: 'Streaming',
-            Protocol: 'http',
-            MaxAudioChannels: physicalAudioChannels.toString()
-        });
-    }
-
-    profile.TranscodingProfiles.push({
-        Container: 'mp4',
-        Type: 'Video',
-        AudioCodec: videoAudioCodecs.join(','),
-        VideoCodec: 'h264',
-        Context: 'Static',
-        Protocol: 'http'
-    });
 
     profile.ContainerProfiles = [];
 

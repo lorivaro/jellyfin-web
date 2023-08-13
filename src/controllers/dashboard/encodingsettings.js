@@ -32,9 +32,9 @@ function loadPage(page, config, systemInfo) {
     page.querySelector('#chkTonemapping').checked = config.EnableTonemapping;
     page.querySelector('#chkVppTonemapping').checked = config.EnableVppTonemapping;
     page.querySelector('#selectTonemappingAlgorithm').value = config.TonemappingAlgorithm;
+    page.querySelector('#selectTonemappingMode').value = config.TonemappingMode;
     page.querySelector('#selectTonemappingRange').value = config.TonemappingRange;
     page.querySelector('#txtTonemappingDesat').value = config.TonemappingDesat;
-    page.querySelector('#txtTonemappingThreshold').value = config.TonemappingThreshold;
     page.querySelector('#txtTonemappingPeak').value = config.TonemappingPeak;
     page.querySelector('#txtTonemappingParam').value = config.TonemappingParam || '';
     page.querySelector('#txtVppTonemappingBrightness').value = config.VppTonemappingBrightness;
@@ -46,6 +46,9 @@ function loadPage(page, config, systemInfo) {
     page.querySelector('#chkDoubleRateDeinterlacing').checked = config.DeinterlaceDoubleRate;
     page.querySelector('#chkEnableSubtitleExtraction').checked = config.EnableSubtitleExtraction || false;
     page.querySelector('#chkEnableThrottling').checked = config.EnableThrottling || false;
+    page.querySelector('#chkEnableSegmentDeletion').checked = config.EnableSegmentDeletion || false;
+    page.querySelector('#txtThrottleDelaySeconds').value = config.ThrottleDelaySeconds || '';
+    page.querySelector('#txtSegmentKeepSeconds').value = config.SegmentKeepSeconds || '';
     page.querySelector('#selectVideoDecoder').dispatchEvent(new CustomEvent('change', {
         bubbles: true
     }));
@@ -90,9 +93,9 @@ function onSubmit() {
             config.EnableTonemapping = form.querySelector('#chkTonemapping').checked;
             config.EnableVppTonemapping = form.querySelector('#chkVppTonemapping').checked;
             config.TonemappingAlgorithm = form.querySelector('#selectTonemappingAlgorithm').value;
+            config.TonemappingMode = form.querySelector('#selectTonemappingMode').value;
             config.TonemappingRange = form.querySelector('#selectTonemappingRange').value;
             config.TonemappingDesat = form.querySelector('#txtTonemappingDesat').value;
-            config.TonemappingThreshold = form.querySelector('#txtTonemappingThreshold').value;
             config.TonemappingPeak = form.querySelector('#txtTonemappingPeak').value;
             config.TonemappingParam = form.querySelector('#txtTonemappingParam').value || '0';
             config.VppTonemappingBrightness = form.querySelector('#txtVppTonemappingBrightness').value;
@@ -104,6 +107,9 @@ function onSubmit() {
             config.DeinterlaceDoubleRate = form.querySelector('#chkDoubleRateDeinterlacing').checked;
             config.EnableSubtitleExtraction = form.querySelector('#chkEnableSubtitleExtraction').checked;
             config.EnableThrottling = form.querySelector('#chkEnableThrottling').checked;
+            config.EnableSegmentDeletion = form.querySelector('#chkEnableSegmentDeletion').checked;
+            config.ThrottleDelaySeconds = parseInt(form.querySelector('#txtThrottleDelaySeconds').value || '0', 10);
+            config.SegmentKeepSeconds = parseInt(form.querySelector('#txtSegmentKeepSeconds').value || '0', 10);
             config.HardwareDecodingCodecs = Array.prototype.map.call(Array.prototype.filter.call(form.querySelectorAll('.chkDecodeCodec'), function (c) {
                 return c.checked;
             }), function (c) {

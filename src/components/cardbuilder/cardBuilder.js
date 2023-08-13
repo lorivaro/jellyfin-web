@@ -22,7 +22,7 @@ import './card.scss';
 import '../../elements/emby-button/paper-icon-button-light';
 import '../guide/programs.scss';
 import ServerConnections from '../ServerConnections';
-import { appRouter } from '../appRouter';
+import { appRouter } from '../router/appRouter';
 
 const enableFocusTransform = !browser.slow && !browser.edge;
 
@@ -546,7 +546,7 @@ function getCardImageUrl(item, apiClient, options, shape) {
         imgType = 'Backdrop';
         imgTag = item.ParentBackdropImageTags[0];
         itemId = item.ParentBackdropItemId;
-    } else if (item.ImageTags && item.ImageTags.Primary && (item.Type !== 'Episode' || item.ChildCount !== 0)) {
+    } else if (item.ImageTags?.Primary && (item.Type !== 'Episode' || item.ChildCount !== 0)) {
         imgType = 'Primary';
         imgTag = item.ImageTags.Primary;
         height = width && primaryImageAspectRatio ? Math.round(width / primaryImageAspectRatio) : null;
@@ -591,10 +591,10 @@ function getCardImageUrl(item, apiClient, options, shape) {
     } else if (item.Type === 'Season' && item.ImageTags && item.ImageTags.Thumb) {
         imgType = 'Thumb';
         imgTag = item.ImageTags.Thumb;
-    } else if (item.BackdropImageTags && item.BackdropImageTags.length) {
+    } else if (item.BackdropImageTags?.length) {
         imgType = 'Backdrop';
         imgTag = item.BackdropImageTags[0];
-    } else if (item.ImageTags && item.ImageTags.Thumb) {
+    } else if (item.ImageTags?.Thumb) {
         imgType = 'Thumb';
         imgTag = item.ImageTags.Thumb;
     } else if (item.SeriesThumbImageTag && options.inheritThumb !== false) {
@@ -605,7 +605,7 @@ function getCardImageUrl(item, apiClient, options, shape) {
         imgType = 'Thumb';
         imgTag = item.ParentThumbImageTag;
         itemId = item.ParentThumbItemId;
-    } else if (item.ParentBackdropImageTags && item.ParentBackdropImageTags.length && options.inheritThumb !== false) {
+    } else if (item.ParentBackdropImageTags?.length && options.inheritThumb !== false) {
         imgType = 'Backdrop';
         imgTag = item.ParentBackdropImageTags[0];
         itemId = item.ParentBackdropItemId;
@@ -634,7 +634,7 @@ function getCardImageUrl(item, apiClient, options, shape) {
 
     return {
         imgUrl: imgUrl,
-        blurhash: (blurHashes[imgType] || {})[imgTag],
+        blurhash: blurHashes[imgType]?.[imgTag],
         forceName: forceName,
         coverImage: coverImage
     };
@@ -679,9 +679,8 @@ function getCardTextLines(lines, cssClass, forceLines, isOuterFooter, cardLayout
 
     let valid = 0;
 
-    for (let i = 0; i < lines.length; i++) {
+    for (const text of lines) {
         let currentCssClass = cssClass;
-        const text = lines[i];
 
         if (valid > 0 && isOuterFooter) {
             currentCssClass += ' cardText-secondary';
@@ -862,8 +861,8 @@ function getCardFooterText(item, apiClient, options, footerClass, progressHtml, 
 
         if (options.textLines) {
             const additionalLines = options.textLines(item);
-            for (let i = 0; i < additionalLines.length; i++) {
-                lines.push(additionalLines[i]);
+            for (const additionalLine of additionalLines) {
+                lines.push(additionalLine);
             }
         }
 
@@ -1118,7 +1117,6 @@ let refreshIndicatorLoaded;
 function importRefreshIndicator() {
     if (!refreshIndicatorLoaded) {
         refreshIndicatorLoaded = true;
-        /* eslint-disable-next-line  @babel/no-unused-expressions */
         import('../../elements/emby-itemrefreshindicator/emby-itemrefreshindicator');
     }
 }
@@ -1424,7 +1422,7 @@ function buildCard(index, item, apiClient, options) {
         className += ' card-withuserdata';
     }
 
-    const positionTicksData = item.UserData && item.UserData.PlaybackPositionTicks ? (' data-positionticks="' + item.UserData.PlaybackPositionTicks + '"') : '';
+    const positionTicksData = item.UserData?.PlaybackPositionTicks ? (' data-positionticks="' + item.UserData.PlaybackPositionTicks + '"') : '';
     const collectionIdData = options.collectionId ? (' data-collectionid="' + options.collectionId + '"') : '';
     const playlistIdData = options.playlistId ? (' data-playlistid="' + options.playlistId + '"') : '';
     const mediaTypeData = item.MediaType ? (' data-mediatype="' + item.MediaType + '"') : '';
@@ -1469,7 +1467,6 @@ function getHoverMenuHtml(item, action) {
     const userData = item.UserData || {};
 
     if (itemHelper.canMarkPlayed(item)) {
-        /* eslint-disable-next-line  @babel/no-unused-expressions */
         import('../../elements/emby-playstatebutton/emby-playstatebutton');
         html += '<button is="emby-playstatebutton" type="button" data-action="none" class="' + btnCssClass + '" data-id="' + item.Id + '" data-serverid="' + item.ServerId + '" data-itemtype="' + item.Type + '" data-played="' + (userData.Played) + '"><span class="material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover check" aria-hidden="true"></span></button>';
     }
@@ -1477,7 +1474,6 @@ function getHoverMenuHtml(item, action) {
     if (itemHelper.canRate(item)) {
         const likes = userData.Likes == null ? '' : userData.Likes;
 
-        /* eslint-disable-next-line  @babel/no-unused-expressions */
         import('../../elements/emby-ratingbutton/emby-ratingbutton');
         html += '<button is="emby-ratingbutton" type="button" data-action="none" class="' + btnCssClass + '" data-id="' + item.Id + '" data-serverid="' + item.ServerId + '" data-itemtype="' + item.Type + '" data-likes="' + likes + '" data-isfavorite="' + (userData.IsFavorite) + '"><span class="material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover favorite" aria-hidden="true"></span></button>';
     }
@@ -1724,8 +1720,7 @@ export function onTimerCreated(programId, newTimerId, itemsContainer) {
 export function onTimerCancelled(timerId, itemsContainer) {
     const cells = itemsContainer.querySelectorAll('.card[data-timerid="' + timerId + '"]');
 
-    for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
+    for (const cell of cells) {
         const icon = cell.querySelector('.timerIndicator');
         if (icon) {
             icon.parentNode.removeChild(icon);
@@ -1742,8 +1737,7 @@ export function onTimerCancelled(timerId, itemsContainer) {
 export function onSeriesTimerCancelled(cancelledTimerId, itemsContainer) {
     const cells = itemsContainer.querySelectorAll('.card[data-seriestimerid="' + cancelledTimerId + '"]');
 
-    for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
+    for (const cell of cells) {
         const icon = cell.querySelector('.timerIndicator');
         if (icon) {
             icon.parentNode.removeChild(icon);

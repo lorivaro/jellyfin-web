@@ -5,7 +5,7 @@ import dom from './dom';
 import layoutManager from '../components/layoutManager';
 import inputManager from './inputManager';
 import viewManager from '../components/viewManager/viewManager';
-import { appRouter } from '../components/appRouter';
+import { appRouter } from '../components/router/appRouter';
 import { appHost } from '../components/apphost';
 import { playbackManager } from '../components/playback/playbackmanager';
 import { pluginManager } from '../components/pluginManager';
@@ -71,7 +71,7 @@ function renderHeader() {
 }
 
 function getCurrentApiClient() {
-    if (currentUser && currentUser.localUser) {
+    if (currentUser?.localUser) {
         return ServerConnections.getApiClient(currentUser.localUser.ServerId);
     }
 
@@ -127,7 +127,7 @@ function updateUserInHeader(user) {
 
     let hasImage;
 
-    if (user && user.name) {
+    if (user?.name) {
         if (user.imageUrl) {
             const url = user.imageUrl;
             updateHeaderUserButton(url);
@@ -143,7 +143,7 @@ function updateUserInHeader(user) {
         updateHeaderUserButton(null);
     }
 
-    if (user && user.localUser) {
+    if (user?.localUser) {
         if (headerHomeButton) {
             headerHomeButton.classList.remove('hide');
         }
@@ -322,7 +322,7 @@ function refreshLibraryInfoInDrawer(user) {
     // libraries are added here
     html += '<div class="libraryMenuOptions"></div>';
 
-    if (user.localUser && user.localUser.Policy.IsAdministrator) {
+    if (user.localUser?.Policy.IsAdministrator) {
         html += '<div class="adminMenuOptions">';
         html += '<h3 class="sidebarHeader">';
         html += globalize.translate('HeaderAdmin');
@@ -466,7 +466,7 @@ function createToolsMenuList(pluginItems) {
     });
     links.push({
         name: globalize.translate('HeaderActivity'),
-        href: '#/serveractivity.html',
+        href: '#/dashboard/activity',
         pageIds: ['serverActivityPage'],
         icon: 'assessment'
     });
@@ -516,10 +516,9 @@ function createToolsMenuList(pluginItems) {
         icon: 'bug_report'
     });
     links.push({
-        name: globalize.translate('TabNotifications'),
+        name: globalize.translate('Notifications'),
         icon: 'notifications',
-        href: '#/notificationsettings.html',
-        pageIds: ['notificationSettingsPage', 'notificationSettingPage']
+        href: '#/notificationsettings.html'
     });
     links.push({
         name: globalize.translate('TabPlugins'),
@@ -591,13 +590,10 @@ function getToolsLinkHtml(item) {
 
 function getToolsMenuHtml(apiClient) {
     return getToolsMenuLinks(apiClient).then(function (items) {
-        let item;
         let menuHtml = '';
         menuHtml += '<div class="drawerContent">';
 
-        for (let i = 0; i < items.length; i++) {
-            item = items[i];
-
+        for (const item of items) {
             if (item.href) {
                 menuHtml += getToolsLinkHtml(item);
             } else if (item.name) {

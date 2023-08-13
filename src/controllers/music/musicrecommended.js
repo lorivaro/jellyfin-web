@@ -9,12 +9,14 @@ import imageLoader from '../../components/images/imageLoader';
 import libraryMenu from '../../scripts/libraryMenu';
 import * as mainTabsManager from '../../components/maintabsmanager';
 import globalize from '../../scripts/globalize';
+import { LibraryTab } from '../../types/libraryTab.ts';
+import Dashboard from '../../utils/dashboard';
+
 import '../../styles/scrollstyles.scss';
 import '../../elements/emby-itemscontainer/emby-itemscontainer';
 import '../../elements/emby-tabs/emby-tabs';
 import '../../elements/emby-button/emby-button';
 import '../../styles/flexstyles.scss';
-import Dashboard from '../../utils/dashboard';
 
 function itemsPerRow() {
     const screenWidth = dom.getWindowSize().innerWidth;
@@ -194,22 +196,22 @@ function getTabs() {
 
 function getDefaultTabIndex(folderId) {
     switch (userSettings.get('landing-' + folderId)) {
-        case 'suggestions':
+        case LibraryTab.Suggestions:
             return 1;
 
-        case 'albumartists':
+        case LibraryTab.AlbumArtists:
             return 2;
 
-        case 'artists':
+        case LibraryTab.Artists:
             return 3;
 
-        case 'playlists':
+        case LibraryTab.Playlists:
             return 4;
 
-        case 'songs':
+        case LibraryTab.Songs:
             return 5;
 
-        case 'genres':
+        case LibraryTab.Genres:
             return 6;
 
         default:
@@ -288,7 +290,7 @@ export default function (view, params) {
                 break;
         }
 
-        import(`../music/${depends}`).then(({ default: controllerFactory }) => {
+        import(`../music/${depends}`).then(({ default: ControllerFactory }) => {
             let tabContent;
 
             if (index == 1) {
@@ -304,7 +306,7 @@ export default function (view, params) {
                 if (index === 1) {
                     controller = this;
                 } else {
-                    controller = new controllerFactory(view, params, tabContent);
+                    controller = new ControllerFactory(view, params, tabContent);
                 }
 
                 if (index == 2) {

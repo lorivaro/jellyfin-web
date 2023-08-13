@@ -1,9 +1,11 @@
+import DOMPurify from 'dompurify';
+
 import browser from '../../scripts/browser';
 import { appHost } from '../../components/apphost';
 import loading from '../../components/loading/loading';
 import dom from '../../scripts/dom';
 import { playbackManager } from '../../components/playback/playbackmanager';
-import { appRouter } from '../../components/appRouter';
+import { appRouter } from '../../components/router/appRouter';
 import {
     bindEventsToHlsPlayer,
     destroyHlsPlayer,
@@ -137,7 +139,10 @@ function zoomIn(elem) {
 }
 
 function normalizeTrackEventText(text, useHtml) {
-    const result = text.replace(/\\N/gi, '\n').replace(/\r/gi, '');
+    const result = text
+        .replace(/\\N/gi, '\n') // Correct newline characters
+        .replace(/\r/gi, '') // Remove carriage return characters
+        .replace(/{\\.*?}/gi, ''); // Remove ass/ssa tags
     return useHtml ? result.replace(/\n/gi, '<br>') : result;
 }
 
@@ -431,6 +436,7 @@ export class HtmlVideoPlayer {
                 const includeCorsCredentials = await getIncludeCorsCredentials();
 
                 const hls = new Hls({
+                    startPosition: options.playerStartPositionTicks / 10000000,
                     manifestLoadingTimeOut: 20000,
                     maxBufferLength: maxBufferLength,
                     xhrSetup(xhr) {
@@ -1005,7 +1011,7 @@ export class HtmlVideoPlayer {
         }
 
         if (elem.videoWidth === 0 && elem.videoHeight === 0) {
-            const mediaSource = (this._currentPlayOptions || {}).mediaSource;
+            const mediaSource = this._currentPlayOptions?.mediaSource;
 
             // Only trigger this if there is media info
             // Avoid triggering in situations where it might not actually have a video stream (audio only live tv channel)
@@ -1252,37 +1258,45 @@ export class HtmlVideoPlayer {
         const fallbackFontList = apiClient.getUrl('/FallbackFont/Fonts', {
             api_key: apiClient.accessToken()
         });
-        const options = {
-            video: videoElement,
-            subUrl: getTextTrackUrl(track, item),
-            fonts: avaliableFonts,
-            fallbackFont: 'liberation sans',
-            availableFonts: { 'liberation sans': `${appRouter.baseUrl()}/default.woff2` },
-            // Disabled eslint compat, but is safe as corejs3 polyfills URL
-            // eslint-disable-next-line compat/compat
-            workerUrl: new URL('jassub/dist/jassub-worker.js', import.meta.url),
-            // eslint-disable-next-line compat/compat
-            legacyWorkerUrl: new URL('jassub/dist/jassub-worker-legacy.js', import.meta.url),
-            timeOffset: (this._currentPlayOptions.transcodingOffsetTicks || 0) / 10000000,
-            // new jassub options; override all, even defaults
-            blendMode: 'js',
-            asyncRender: true,
-            // firefox implements offscreen canvas, but not according to spec which causes errors
-            offscreenRender: !browser.firefox,
-            // RVFC is polyfilled everywhere, but webOS 2 reports polyfill API's as functional even tho they aren't
-            onDemandRender: browser.web0sVersion !== 2,
-            useLocalFonts: true,
-            dropAllAnimations: false,
-            libassMemoryLimit: 40,
-            libassGlyphLimit: 40,
-            targetFps: 24,
-            prescaleFactor: 0.8,
-            prescaleHeightLimit: 1080,
-            maxRenderHeight: 2160
-        };
             // TODO: replace with `event-target-polyfill` once https://github.com/benlesh/event-target-polyfill/pull/12 or 11 is merged
         import('event-target-polyfill').then(() => {
             import('jassub').then(({ default: JASSUB }) => {
+                // test SIMD support
+                JASSUB._test();
+
+                const options = {
+                    video: videoElement,
+                    subUrl: getTextTrackUrl(track, item),
+                    fonts: avaliableFonts,
+                    fallbackFont: 'liberation sans',
+                    availableFonts: { 'liberation sans': `${appRouter.baseUrl()}/default.woff2` },
+                    // Disabled eslint compat, but is safe as corejs3 polyfills URL
+                    // eslint-disable-next-line compat/compat
+                    workerUrl: new URL('jassub/dist/jassub-worker.js', import.meta.url).href,
+                    // eslint-disable-next-line compat/compat
+                    wasmUrl: new URL('jassub/dist/jassub-worker.wasm', import.meta.url).href,
+                    // eslint-disable-next-line compat/compat
+                    legacyWasmUrl: new URL('jassub/dist/jassub-worker.wasm.js', import.meta.url).href,
+                    // eslint-disable-next-line compat/compat
+                    modernWasmUrl : new URL('jassub/dist/jassub-worker-modern.wasm', import.meta.url).href,
+                    timeOffset: (this._currentPlayOptions.transcodingOffsetTicks || 0) / 10000000,
+                    // new jassub options; override all, even defaults
+                    blendMode: 'js',
+                    asyncRender: true,
+                    offscreenRender: true,
+                    // RVFC is polyfilled everywhere, but webOS 2 reports polyfill API's as functional even tho they aren't
+                    onDemandRender: browser.web0sVersion !== 2,
+                    useLocalFonts: true,
+                    dropAllAnimations: false,
+                    dropAllBlur: !JASSUB._supportsSIMD,
+                    libassMemoryLimit: 40,
+                    libassGlyphLimit: 40,
+                    targetFps: 24,
+                    prescaleFactor: 0.8,
+                    prescaleHeightLimit: 1080,
+                    maxRenderHeight: 2160
+                };
+
                 Promise.all([
                     apiClient.getNamedConfiguration('encoding'),
                     // Worker in Tizen 5 doesn't resolve relative path with async request
@@ -1477,8 +1491,8 @@ export class HtmlVideoPlayer {
                 // add some cues to show the text
                 // in safari, the cues need to be added before setting the track mode to showing
                 for (const trackEvent of data.TrackEvents) {
-                    const trackCueObject = window.VTTCue || window.TextTrackCue;
-                    const cue = new trackCueObject(trackEvent.StartPositionTicks / 10000000, trackEvent.EndPositionTicks / 10000000, normalizeTrackEventText(trackEvent.Text, false));
+                    const TrackCue = window.VTTCue || window.TextTrackCue;
+                    const cue = new TrackCue(trackEvent.StartPositionTicks / 10000000, trackEvent.EndPositionTicks / 10000000, normalizeTrackEventText(trackEvent.Text, false));
 
                     if (cue.line === 'auto') {
                         cue.line = cueLine;
@@ -1523,8 +1537,9 @@ export class HtmlVideoPlayer {
                     }
                 }
 
-                if (selectedTrackEvent && selectedTrackEvent.Text) {
-                    subtitleTextElement.innerHTML = normalizeTrackEventText(selectedTrackEvent.Text, true);
+                if (selectedTrackEvent?.Text) {
+                    subtitleTextElement.innerHTML = DOMPurify.sanitize(
+                        normalizeTrackEventText(selectedTrackEvent.Text, true));
                     subtitleTextElement.classList.remove('hide');
                 } else {
                     subtitleTextElement.classList.add('hide');
@@ -1798,7 +1813,7 @@ export class HtmlVideoPlayer {
                 Windows.UI.ViewManagement.ApplicationView.getForCurrentView().tryEnterViewModeAsync(Windows.UI.ViewManagement.ApplicationViewMode.default);
             }
         } else {
-            if (video && video.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === 'function') {
+            if (video?.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === 'function') {
                 video.webkitSetPresentationMode(isEnabled ? 'picture-in-picture' : 'inline');
             }
         }
@@ -1877,7 +1892,7 @@ export class HtmlVideoPlayer {
         const mediaElement = this.#mediaElement;
         if (mediaElement) {
             const seekable = mediaElement.seekable;
-            if (seekable && seekable.length) {
+            if (seekable?.length) {
                 let start = seekable.start(0);
                 let end = seekable.end(0);
 

@@ -13,13 +13,13 @@ function calculateOffset(textarea) {
     const props = ['paddingTop', 'paddingBottom'];
     let offset = 0;
 
-    for (let i = 0; i < props.length; i++) {
-        offset += parseInt(style[props[i]], 10);
+    for (const prop of props) {
+        offset += parseInt(style[prop], 10);
     }
     return offset;
 }
 
-function autoGrow(textarea, maxLines) {
+function AutoGrow(textarea, maxLines) {
     const self = this;
 
     if (maxLines === undefined) {
@@ -74,7 +74,7 @@ if (Object.getOwnPropertyDescriptor && Object.defineProperty) {
     const descriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
 
     // descriptor returning null in webos
-    if (descriptor && descriptor.configurable) {
+    if (descriptor?.configurable) {
         const baseSetMethod = descriptor.set;
         descriptor.set = function (value) {
             baseSetMethod.call(this, value);
@@ -125,7 +125,7 @@ EmbyTextAreaPrototype.attachedCallback = function () {
         label.innerText = text;
     };
 
-    new autoGrow(this);
+    new AutoGrow(this);
 };
 
 document.registerElement('emby-textarea', {

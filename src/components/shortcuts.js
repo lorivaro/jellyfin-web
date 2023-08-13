@@ -5,7 +5,7 @@
 
 import { playbackManager } from './playback/playbackmanager';
 import inputManager from '../scripts/inputManager';
-import { appRouter } from './appRouter';
+import { appRouter } from './router/appRouter';
 import globalize from '../scripts/globalize';
 import dom from '../scripts/dom';
 import recordingHelper from './recordingcreator/recordinghelper';
@@ -33,7 +33,7 @@ function playAllFromHere(card, serverId, queue) {
     }
 
     const itemsContainer = dom.parentWithClass(card, 'itemsContainer');
-    if (itemsContainer && itemsContainer.fetchData) {
+    if (itemsContainer?.fetchData) {
         const queryOptions = queue ? { StartIndex: startIndex } : {};
 
         return itemsContainer.fetchData(queryOptions).then(result => {
@@ -270,8 +270,8 @@ function executeAction(card, target, action) {
 }
 
 function addToPlaylist(item) {
-    import('./playlisteditor/playlisteditor').then(({ default: playlistEditor }) => {
-        new playlistEditor().show({
+    import('./playlisteditor/playlisteditor').then(({ default: PlaylistEditor }) => {
+        new PlaylistEditor().show({
             items: [item.Id],
             serverId: item.ServerId
 
