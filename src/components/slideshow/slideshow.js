@@ -352,7 +352,7 @@ export default function (options) {
                     minRatio: 1,
                     toggle: true
                 },
-                autoplay: !swiperOptions.interactive || !!swiperOptions.autoplay,
+                autoplay: swiperOptions.autoplay ?? !swiperOptions.interactive,
                 keyboard: {
                     enabled: true
                 },
@@ -514,10 +514,12 @@ export default function (options) {
     function toggleFullscreenButtons(isFullscreen) {
         const btnFullscreen = dialog.querySelector('.btnFullscreen');
         const btnFullscreenExit = dialog.querySelector('.btnFullscreenExit');
-        if (btnFullscreen)
+        if (btnFullscreen) {
             btnFullscreen.classList.toggle('hide', isFullscreen);
-        if (btnFullscreenExit)
+        }
+        if (btnFullscreenExit) {
             btnFullscreenExit.classList.toggle('hide', !isFullscreen);
+        }
     }
 
     /**
