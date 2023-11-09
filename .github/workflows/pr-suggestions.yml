@@ -1,0 +1,38 @@
+name: PR suggestions
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  pull_request_target:
+    branches: [ master, release* ]
+    types:
+      - synchronize
+
+jobs:
+  run-eslint:
+    name: Run eslint suggestions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup node environment
+        uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
+        with:
+          node-version: 20
+          check-latest: true
+          cache: npm
+
+      - name: Install Node.js dependencies
+        run: npm ci --no-audit
+
+      - name: Run eslint
+        if: ${{ github.repository == 'jellyfin/jellyfin-web' }}
+        uses: CatChen/eslint-suggestion-action@1d3c34d8a59287e1c4b6e3b11093da99b86ad729 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

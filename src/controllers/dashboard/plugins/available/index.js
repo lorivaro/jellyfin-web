@@ -3,11 +3,11 @@ import escapeHTML from 'escape-html';
 import loading from '../../../../components/loading/loading';
 import libraryMenu from '../../../../scripts/libraryMenu';
 import globalize from '../../../../scripts/globalize';
-import * as cardBuilder from '../../../../components/cardbuilder/cardBuilder.js';
 import '../../../../components/cardbuilder/card.scss';
 import '../../../../elements/emby-button/emby-button';
 import '../../../../elements/emby-checkbox/emby-checkbox';
 import '../../../../elements/emby-select/emby-select';
+import { getDefaultBackgroundClass } from '../../../../components/cardbuilder/cardBuilderUtils';
 
 function reloadList(page) {
     loading.show();
@@ -120,7 +120,7 @@ function onSearchBarType(searchBar) {
 
 function getPluginHtml(plugin, options, installedPlugins) {
     let html = '';
-    let href = plugin.externalUrl ? plugin.externalUrl : '#/addplugin.html?name=' + encodeURIComponent(plugin.name) + '&guid=' + plugin.guid;
+    let href = plugin.externalUrl ? plugin.externalUrl : '#/dashboard/plugins/add?name=' + encodeURIComponent(plugin.name) + '&guid=' + plugin.guid;
 
     if (options.context) {
         href += '&context=' + options.context;
@@ -137,7 +137,7 @@ function getPluginHtml(plugin, options, installedPlugins) {
     if (plugin.imageUrl) {
         html += `<img src="${escapeHTML(plugin.imageUrl)}" style="width:100%" />`;
     } else {
-        html += `<div class="cardImage flex align-items-center justify-content-center ${cardBuilder.getDefaultBackgroundClass()}">`;
+        html += `<div class="cardImage flex align-items-center justify-content-center ${getDefaultBackgroundClass()}">`;
         html += '<span class="cardImageIcon material-icons extension" aria-hidden="true"></span>';
         html += '</div>';
     }
@@ -161,13 +161,13 @@ function getPluginHtml(plugin, options, installedPlugins) {
 
 function getTabs() {
     return [{
-        href: '#/installedplugins.html',
+        href: '#/dashboard/plugins',
         name: globalize.translate('TabMyPlugins')
     }, {
-        href: '#/availableplugins.html',
+        href: '#/dashboard/plugins/catalog',
         name: globalize.translate('TabCatalog')
     }, {
-        href: '#/repositories.html',
+        href: '#/dashboard/plugins/repositories',
         name: globalize.translate('TabRepositories')
     }];
 }

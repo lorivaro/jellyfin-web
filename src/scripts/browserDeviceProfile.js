@@ -189,6 +189,27 @@ function supportsVc1(videoTestElement) {
     return browser.tizen || browser.web0s || browser.edgeUwp || videoTestElement.canPlayType('video/mp4; codecs="vc-1"').replace(/no/, '');
 }
 
+function supportsHdr10(options) {
+    return options.supportsHdr10 ?? (false // eslint-disable-line sonarjs/no-redundant-boolean
+            || browser.tizen
+            || browser.web0s
+            || browser.safari && ((browser.iOS && browser.iOSVersion >= 11) || browser.osx)
+            // Chrome mobile and Firefox have no client side tone-mapping
+            // Edge Chromium on Nvidia is known to have color issues on 10-bit video
+            || browser.chrome && !browser.mobile
+    );
+}
+
+function supportsHlg(options) {
+    return options.supportsHlg ?? supportsHdr10(options);
+}
+
+function supportsDolbyVision(options) {
+    return options.supportsDolbyVision ?? (false // eslint-disable-line sonarjs/no-redundant-boolean
+            || browser.safari && ((browser.iOS && browser.iOSVersion >= 13) || browser.osx)
+    );
+}
+
 function getDirectPlayProfileForVideoContainer(container, videoAudioCodecs, videoTestElement, options) {
     let supported = false;
     let profileContainer = container;
@@ -516,7 +537,8 @@ export default function (options) {
         }
     }
 
-    if (canPlayAudioFormat('flac')) {
+    // FLAC audio in video plays with a delay on Tizen
+    if (canPlayAudioFormat('flac') && !browser.tizen) {
         videoAudioCodecs.push('flac');
         hlsInFmp4VideoAudioCodecs.push('flac');
     }
@@ -672,7 +694,7 @@ export default function (options) {
 
     profile.TranscodingProfiles = [];
 
-    const hlsBreakOnNonKeyFrames = browser.iOS || browser.osx || browser.edge || !canPlayNativeHls() ? true : false;
+    const hlsBreakOnNonKeyFrames = browser.iOS || browser.osx || browser.edge || !canPlayNativeHls();
 
     if (canPlayHls() && browser.enableHlsAudio !== false) {
         profile.TranscodingProfiles.push({
@@ -828,10 +850,9 @@ export default function (options) {
         maxH264Level = 52;
     }
 
-    if ((browser.tizen
-            || videoTestElement.canPlayType('video/mp4; codecs="avc1.6e0033"').replace(/no/, ''))
+    if (videoTestElement.canPlayType('video/mp4; codecs="avc1.6e0033"').replace(/no/, '')
             // These tests are passing in safari, but playback is failing
-            && !browser.safari && !browser.iOS && !browser.web0s && !browser.edge && !browser.mobile
+            && !browser.safari && !browser.iOS && !browser.web0s && !browser.edge && !browser.mobile && !browser.tizen
     ) {
         h264Profiles += '|high 10';
     }
@@ -898,25 +919,20 @@ export default function (options) {
     let vp9VideoRangeTypes = 'SDR';
     let av1VideoRangeTypes = 'SDR';
 
-    if (browser.safari && ((browser.iOS && browser.iOSVersion >= 11) || browser.osx)) {
-        hevcVideoRangeTypes += '|HDR10|HLG';
-        if ((browser.iOS && browser.iOSVersion >= 13) || browser.osx) {
-            hevcVideoRangeTypes += '|DOVI';
-        }
+    if (supportsHdr10(options)) {
+        hevcVideoRangeTypes += '|HDR10';
+        vp9VideoRangeTypes += '|HDR10';
+        av1VideoRangeTypes += '|HDR10';
     }
 
-    if (browser.tizen || browser.web0s) {
-        hevcVideoRangeTypes += '|HDR10|HLG';
-        vp9VideoRangeTypes += '|HDR10|HLG';
-        av1VideoRangeTypes += '|HDR10|HLG';
+    if (supportsHlg(options)) {
+        hevcVideoRangeTypes += '|HLG';
+        vp9VideoRangeTypes += '|HLG';
+        av1VideoRangeTypes += '|HLG';
     }
 
-    // Chrome mobile and Firefox have no client side tone-mapping
-    // Edge Chromium on Nvidia is known to have color issues on 10-bit video
-    if (browser.chrome && !browser.mobile) {
-        hevcVideoRangeTypes += '|HDR10|HLG';
-        vp9VideoRangeTypes += '|HDR10|HLG';
-        av1VideoRangeTypes += '|HDR10|HLG';
+    if (supportsDolbyVision(options)) {
+        hevcVideoRangeTypes += '|DOVI';
     }
 
     const h264CodecProfileConditions = [

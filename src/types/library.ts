@@ -8,7 +8,7 @@ import { ItemSortBy } from '@jellyfin/sdk/lib/models/api/item-sort-by';
 export type ParentId = string | null | undefined;
 
 export interface LibraryViewProps {
-    parentId: string | null;
+    parentId: ParentId;
 }
 
 export enum FeatureFilters {
@@ -62,6 +62,5 @@ export interface LibraryViewSettings {
     ShowTitle: boolean;
     ShowYear?: boolean;
     Filters?: Filters;
-    NameLessThan?: string | null;
-    NameStartsWith?: string | null;
+    Alphabet?: string | null;
 }

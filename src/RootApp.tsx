@@ -1,32 +1,33 @@
 import loadable from '@loadable/component';
+import { ThemeProvider } from '@mui/material/styles';
 import { History } from '@remix-run/router';
-import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import React from 'react';
 
-import StableApp from './apps/stable/App';
-import { HistoryRouter } from './components/router/HistoryRouter';
-import { ApiProvider } from './hooks/useApi';
-import { WebConfigProvider } from './hooks/useWebConfig';
+import { ApiProvider } from 'hooks/useApi';
+import { WebConfigProvider } from 'hooks/useWebConfig';
+import theme from 'themes/theme';
 
-const ExperimentalApp = loadable(() => import('./apps/experimental/App'));
+const StableAppRouter = loadable(() => import('./apps/stable/AppRouter'));
+const RootAppRouter = loadable(() => import('./RootAppRouter'));
 
 const queryClient = new QueryClient();
 
-const RootApp = ({ history }: { history: History }) => {
+const RootApp = ({ history }: Readonly<{ history: History }>) => {
     const layoutMode = localStorage.getItem('layout');
+    const isExperimentalLayout = layoutMode === 'experimental';
 
     return (
         <QueryClientProvider client={queryClient}>
             <ApiProvider>
                 <WebConfigProvider>
-                    <HistoryRouter history={history}>
-                        {
-                            layoutMode === 'experimental' ?
-                                <ExperimentalApp /> :
-                                <StableApp />
+                    <ThemeProvider theme={theme}>
+                        {isExperimentalLayout ?
+                            <RootAppRouter history={history} /> :
+                            <StableAppRouter history={history} />
                         }
-                    </HistoryRouter>
+                    </ThemeProvider>
                 </WebConfigProvider>
             </ApiProvider>
             <ReactQueryDevtools initialIsOpen={false} />

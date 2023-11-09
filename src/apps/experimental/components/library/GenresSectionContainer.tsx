@@ -12,11 +12,12 @@ import Loading from 'components/loading/LoadingComponent';
 import { appRouter } from 'components/router/appRouter';
 import SectionContainer from './SectionContainer';
 import { CollectionType } from 'types/collectionType';
+import { ParentId } from 'types/library';
 
 interface GenresSectionContainerProps {
-    parentId?: string | null;
-    collectionType?: CollectionType;
-    itemType: BaseItemKind;
+    parentId: ParentId;
+    collectionType: CollectionType | undefined;
+    itemType: BaseItemKind[];
     genre: BaseItemDto;
 }
 
@@ -30,7 +31,7 @@ const GenresSectionContainer: FC<GenresSectionContainerProps> = ({
         return {
             sortBy: [ItemSortBy.Random],
             sortOrder: [SortOrder.Ascending],
-            includeItemTypes: [itemType],
+            includeItemTypes: itemType,
             recursive: true,
             fields: [
                 ItemFields.PrimaryImageAspectRatio,
@@ -69,9 +70,9 @@ const GenresSectionContainer: FC<GenresSectionContainerProps> = ({
             showTitle: true,
             centerText: true,
             cardLayout: false,
-            shape: itemType === BaseItemKind.MusicAlbum ? 'overflowSquare' : 'overflowPortrait',
-            showParentTitle: itemType === BaseItemKind.MusicAlbum ? true : false,
-            showYear: itemType === BaseItemKind.MusicAlbum ? false : true
+            shape: collectionType === CollectionType.Music ? 'overflowSquare' : 'overflowPortrait',
+            showParentTitle: collectionType === CollectionType.Music,
+            showYear: collectionType !== CollectionType.Music
         }}
     />;
 };

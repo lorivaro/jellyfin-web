@@ -63,9 +63,12 @@ module.exports = {
         '@typescript-eslint/no-shadow': ['error'],
         'no-throw-literal': ['error'],
         'no-trailing-spaces': ['error'],
+        'no-undef-init': ['error'],
+        'no-unneeded-ternary': ['error'],
         'no-unused-expressions': ['off'],
         '@typescript-eslint/no-unused-expressions': ['error', { 'allowShortCircuit': true, 'allowTernary': true, 'allowTaggedTemplates': true }],
         'no-unused-private-class-members': ['error'],
+        'no-useless-rename': ['error'],
         'no-useless-constructor': ['off'],
         '@typescript-eslint/no-useless-constructor': ['error'],
         'no-var': ['error'],
@@ -87,6 +90,7 @@ module.exports = {
 
         'react/jsx-filename-extension': ['error', { 'extensions': ['.jsx', '.tsx'] }],
         'react/jsx-no-bind': ['error'],
+        'react/jsx-no-useless-fragment': ['error'],
         'react/jsx-no-constructed-context-values': ['error'],
         'react/no-array-index-key': ['error'],
 
