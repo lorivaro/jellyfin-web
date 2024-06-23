@@ -212,7 +212,7 @@ export default function (view, params, tabContent, options) {
                         name: globalize.translate('OptionRandom'),
                         id: 'Random'
                     }, {
-                        name: globalize.translate('OptionImdbRating'),
+                        name: globalize.translate('OptionCommunityRating'),
                         id: 'CommunityRating,SortName,ProductionYear'
                     }, {
                         name: globalize.translate('OptionCriticRating'),
@@ -269,7 +269,7 @@ export default function (view, params, tabContent, options) {
         SortOrder: 'Ascending',
         IncludeItemTypes: 'Movie',
         Recursive: true,
-        Fields: 'PrimaryImageAspectRatio,MediaSourceCount,BasicSyncInfo',
+        Fields: 'PrimaryImageAspectRatio,MediaSourceCount',
         ImageTypeLimit: 1,
         EnableImageTypes: 'Primary,Backdrop,Banner,Thumb',
         StartIndex: 0,

@@ -1,3 +1,4 @@
+import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import { Action, createHashHistory } from 'history';
 
 import { appHost } from '../apphost';
@@ -9,7 +10,11 @@ import loading from '../loading/loading';
 import viewManager from '../viewManager/viewManager';
 import ServerConnections from '../ServerConnections';
 import alert from '../alert';
-import { ConnectionState } from '../../utils/jellyfin-apiclient/ConnectionState.ts';
+
+import { queryClient } from 'utils/query/queryClient';
+import { getItemQuery } from 'hooks/useItem';
+import { toApi } from 'utils/jellyfin-apiclient/compat';
+import { ConnectionState } from 'utils/jellyfin-apiclient/ConnectionState.ts';
 
 export const history = createHashHistory();
 
@@ -182,18 +187,26 @@ class AppRouter {
 
     showItem(item, serverId, options) {
         // TODO: Refactor this so it only gets items, not strings.
-        if (typeof (item) === 'string') {
+        if (typeof item === 'string') {
             const apiClient = serverId ? ServerConnections.getApiClient(serverId) : ServerConnections.currentApiClient();
-            apiClient.getItem(apiClient.getCurrentUserId(), item).then((itemObject) => {
-                this.showItem(itemObject, options);
-            });
+            const api = toApi(apiClient);
+            const userId = apiClient.getCurrentUserId();
+
+            queryClient
+                .fetchQuery(getItemQuery(api, userId, item))
+                .then(itemObject => {
+                    this.showItem(itemObject, options);
+                })
+                .catch(err => {
+                    console.error('[AppRouter] Failed to fetch item', err);
+                });
         } else {
             if (arguments.length === 2) {
                 options = arguments[1];
             }
 
             const url = this.getRouteUrl(item, options);
-            this.show(url, { item });
+            this.show(url);
         }
     }
 
@@ -545,6 +558,30 @@ class AppRouter {
                 urlForList += '&IsFavorite=true';
             }
 
+            if (options.isAiring) {
+                urlForList += '&IsAiring=true';
+            }
+
+            if (options.isMovie) {
+                urlForList += '&IsMovie=true';
+            }
+
+            if (options.isSeries) {
+                urlForList += '&IsSeries=true&IsMovie=false&IsNews=false';
+            }
+
+            if (options.isSports) {
+                urlForList += '&IsSports=true';
+            }
+
+            if (options.isKids) {
+                urlForList += '&IsKids=true';
+            }
+
+            if (options.isNews) {
+                urlForList += '&IsNews=true';
+            }
+
             return urlForList;
         }
 
@@ -599,7 +636,7 @@ class AppRouter {
             return '#/details?seriesTimerId=' + id + '&serverId=' + serverId;
         }
 
-        if (item.CollectionType == 'livetv') {
+        if (item.CollectionType == CollectionType.Livetv) {
             return '#/livetv.html';
         }
 
@@ -638,7 +675,7 @@ class AppRouter {
         }
 
         if (context !== 'folders' && !itemHelper.isLocalItem(item)) {
-            if (item.CollectionType == 'movies') {
+            if (item.CollectionType == CollectionType.Movies) {
                 url = '#/movies.html?topParentId=' + item.Id;
 
                 if (options && options.section === 'latest') {
@@ -648,7 +685,7 @@ class AppRouter {
                 return url;
             }
 
-            if (item.CollectionType == 'tvshows') {
+            if (item.CollectionType == CollectionType.Tvshows) {
                 url = '#/tv.html?topParentId=' + item.Id;
 
                 if (options && options.section === 'latest') {
@@ -658,7 +695,7 @@ class AppRouter {
                 return url;
             }
 
-            if (item.CollectionType == 'music') {
+            if (item.CollectionType == CollectionType.Music) {
                 url = '#/music.html?topParentId=' + item.Id;
 
                 if (options?.section === 'latest') {

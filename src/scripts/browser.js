@@ -116,7 +116,11 @@ function web0sVersion(browser) {
 
         // The next is only valid for the app
 
-        if (browser.versionMajor >= 79) {
+        if (browser.versionMajor >= 94) {
+            return 23;
+        } else if (browser.versionMajor >= 87) {
+            return 22;
+        } else if (browser.versionMajor >= 79) {
             return 6;
         } else if (browser.versionMajor >= 68) {
             return 5;
@@ -184,13 +188,15 @@ function supportsCssAnimation(allowPrefix) {
 const uaMatch = function (ua) {
     ua = ua.toLowerCase();
 
-    const match = /(chrome)[ /]([\w.]+)/.exec(ua)
-        || /(edg)[ /]([\w.]+)/.exec(ua)
+    ua = ua.replace(/(motorola edge)/, '').trim();
+
+    const match = /(edg)[ /]([\w.]+)/.exec(ua)
         || /(edga)[ /]([\w.]+)/.exec(ua)
         || /(edgios)[ /]([\w.]+)/.exec(ua)
         || /(edge)[ /]([\w.]+)/.exec(ua)
         || /(opera)[ /]([\w.]+)/.exec(ua)
         || /(opr)[ /]([\w.]+)/.exec(ua)
+        || /(chrome)[ /]([\w.]+)/.exec(ua)
         || /(safari)[ /]([\w.]+)/.exec(ua)
         || /(firefox)[ /]([\w.]+)/.exec(ua)
         || ua.indexOf('compatible') < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec(ua)

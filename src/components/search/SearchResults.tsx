@@ -1,12 +1,34 @@
 import type { BaseItemDto, BaseItemDtoQueryResult } from '@jellyfin/sdk/lib/generated-client';
+import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
 import type { ApiClient } from 'jellyfin-apiclient';
 import classNames from 'classnames';
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react';
+import React, { type FC, useCallback, useEffect, useState } from 'react';
+import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import { useDebounceValue } from 'usehooks-ts';
 
 import globalize from '../../scripts/globalize';
 import ServerConnections from '../ServerConnections';
 import SearchResultsRow from './SearchResultsRow';
 import Loading from '../loading/LoadingComponent';
+
+interface ParametersOptions {
+    ParentId?: string | null;
+    searchTerm?: string;
+    Limit?: number;
+    Fields?: string;
+    Recursive?: boolean;
+    EnableTotalRecordCount?: boolean;
+    ImageTypeLimit?: number;
+    IncludePeople?: boolean;
+    IncludeMedia?: boolean;
+    IncludeGenres?: boolean;
+    IncludeStudios?: boolean;
+    IncludeArtists?: boolean;
+    IsMissing?: boolean;
+    IncludeItemTypes?: BaseItemKind;
+    MediaTypes?: string;
+    ExcludeItemTypes?: string;
+}
 
 type SearchResultsProps = {
     serverId?: string;
@@ -20,16 +42,16 @@ const ensureNonNullItems = (result: BaseItemDtoQueryResult) => ({
     Items: result.Items || []
 });
 
-const isMovies = (collectionType: string) => collectionType === 'movies';
+const isMovies = (collectionType: string) => collectionType === CollectionType.Movies;
 
-const isMusic = (collectionType: string) => collectionType === 'music';
+const isMusic = (collectionType: string) => collectionType === CollectionType.Music;
 
-const isTVShows = (collectionType: string) => collectionType === 'tvshows' || collectionType === 'tv';
+const isTVShows = (collectionType: string) => collectionType === CollectionType.Tvshows;
 
 /*
  * React component to display search result rows for global search and non-live tv library search
  */
-const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = window.ApiClient.serverId(), parentId, collectionType, query }: SearchResultsProps) => {
+const SearchResults: FC<SearchResultsProps> = ({ serverId = window.ApiClient.serverId(), parentId, collectionType, query }: SearchResultsProps) => {
     const [ movies, setMovies ] = useState<BaseItemDto[]>([]);
     const [ shows, setShows ] = useState<BaseItemDto[]>([]);
     const [ episodes, setEpisodes ] = useState<BaseItemDto[]>([]);
@@ -46,13 +68,14 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
     const [ books, setBooks ] = useState<BaseItemDto[]>([]);
     const [ people, setPeople ] = useState<BaseItemDto[]>([]);
     const [ collections, setCollections ] = useState<BaseItemDto[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [ isLoading, setIsLoading ] = useState(false);
+    const [ debouncedQuery ] = useDebounceValue(query, 500);
 
     const getDefaultParameters = useCallback(() => ({
         ParentId: parentId,
-        searchTerm: query,
+        searchTerm: debouncedQuery,
         Limit: 100,
-        Fields: 'PrimaryImageAspectRatio,CanDelete,BasicSyncInfo,MediaSourceCount',
+        Fields: 'PrimaryImageAspectRatio,CanDelete,MediaSourceCount',
         Recursive: true,
         EnableTotalRecordCount: false,
         ImageTypeLimit: 1,
@@ -61,9 +84,9 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
         IncludeGenres: false,
         IncludeStudios: false,
         IncludeArtists: false
-    }), [parentId, query]);
+    }), [ parentId, debouncedQuery ]);
 
-    const fetchArtists = useCallback((apiClient: ApiClient, params = {}) => (
+    const fetchArtists = useCallback((apiClient: ApiClient, params: ParametersOptions = {}) => (
         apiClient?.getArtists(
             apiClient.getCurrentUserId(),
             {
@@ -74,18 +97,34 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
         ).then(ensureNonNullItems)
     ), [getDefaultParameters]);
 
-    const fetchItems = useCallback((apiClient: ApiClient, params = {}) => (
-        apiClient?.getItems(
-            apiClient.getCurrentUserId(),
-            {
-                ...getDefaultParameters(),
-                IncludeMedia: true,
-                ...params
-            }
-        ).then(ensureNonNullItems)
-    ), [getDefaultParameters]);
+    const fetchItems = useCallback(async (apiClient?: ApiClient, params: ParametersOptions = {}) => {
+        if (!apiClient) {
+            console.error('[SearchResults] no apiClient; unable to fetch items');
+            return {
+                Items: []
+            };
+        }
 
-    const fetchPeople = useCallback((apiClient: ApiClient, params = {}) => (
+        const options: ParametersOptions = {
+            ...getDefaultParameters(),
+            IncludeMedia: true,
+            ...params
+        };
+
+        if (params.IncludeItemTypes === BaseItemKind.Episode) {
+            const user = await apiClient.getCurrentUser();
+            if (!user?.Configuration?.DisplayMissingEpisodes) {
+                options.IsMissing = false;
+            }
+        }
+
+        return apiClient.getItems(
+            apiClient.getCurrentUserId(),
+            options
+        ).then(ensureNonNullItems);
+    }, [getDefaultParameters]);
+
+    const fetchPeople = useCallback((apiClient: ApiClient, params: ParametersOptions = {}) => (
         apiClient?.getPeople(
             apiClient.getCurrentUserId(),
             {
@@ -95,6 +134,10 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
             }
         ).then(ensureNonNullItems)
     ), [getDefaultParameters]);
+
+    useEffect(() => {
+        if (query) setIsLoading(true);
+    }, [ query ]);
 
     useEffect(() => {
         // Reset state
@@ -115,12 +158,10 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
         setPeople([]);
         setCollections([]);
 
-        if (!query) {
+        if (!debouncedQuery) {
             setIsLoading(false);
             return;
         }
-
-        setIsLoading(true);
 
         const apiClient = ServerConnections.getApiClient(serverId);
         const fetchPromises = [];
@@ -229,7 +270,7 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
                 console.error('An error occurred while fetching data:', error);
                 setIsLoading(false); // Set loading to false even if an error occurs
             });
-    }, [collectionType, fetchArtists, fetchItems, fetchPeople, query, serverId]);
+    }, [collectionType, fetchArtists, fetchItems, fetchPeople, debouncedQuery, serverId]);
 
     const allEmpty = [movies, shows, episodes, videos, programs, channels, playlists, artists, albums, songs, photoAlbums, photos, audioBooks, books, people, collections].every(arr => arr.length === 0);
 
@@ -239,7 +280,7 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
                 'searchResults',
                 'padded-bottom-page',
                 'padded-top',
-                { 'hide': !query || collectionType === 'livetv' }
+                { 'hide': !debouncedQuery || collectionType === CollectionType.Livetv }
             )}
         >
             {isLoading ? (
@@ -334,8 +375,10 @@ const SearchResults: FunctionComponent<SearchResultsProps> = ({ serverId = windo
                         cardOptions={{ coverImage: true }}
                     />
 
-                    {allEmpty && query && !isLoading && (
-                        <div className='sorry-text'>{globalize.translate('SearchResultsEmpty', query)}</div>
+                    {allEmpty && debouncedQuery && !isLoading && (
+                        <div className='noItemsMessage centerMessage'>
+                            {globalize.translate('SearchResultsEmpty', debouncedQuery)}
+                        </div>
                     )}
                 </>
             )}

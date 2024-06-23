@@ -48,7 +48,7 @@ function loadLatest(page, parentId) {
     const options = {
         IncludeItemTypes: 'Audio',
         Limit: enableScrollX() ? 3 * itemsPerRow() : 2 * itemsPerRow(),
-        Fields: 'PrimaryImageAspectRatio,BasicSyncInfo',
+        Fields: 'PrimaryImageAspectRatio',
         ParentId: parentId,
         ImageTypeLimit: 1,
         EnableImageTypes: 'Primary,Backdrop,Banner,Thumb',
@@ -86,7 +86,7 @@ function loadRecentlyPlayed(page, parentId) {
         IncludeItemTypes: 'Audio',
         Limit: itemsPerRow(),
         Recursive: true,
-        Fields: 'PrimaryImageAspectRatio,AudioInfo',
+        Fields: 'PrimaryImageAspectRatio',
         Filters: 'IsPlayed',
         ParentId: parentId,
         ImageTypeLimit: 1,
@@ -128,7 +128,7 @@ function loadFrequentlyPlayed(page, parentId) {
         IncludeItemTypes: 'Audio',
         Limit: itemsPerRow(),
         Recursive: true,
-        Fields: 'PrimaryImageAspectRatio,AudioInfo',
+        Fields: 'PrimaryImageAspectRatio',
         Filters: 'IsPlayed',
         ParentId: parentId,
         ImageTypeLimit: 1,
@@ -399,4 +399,3 @@ export default function (view, params) {
         });
     });
 }
-

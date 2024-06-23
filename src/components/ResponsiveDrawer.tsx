@@ -1,37 +1,29 @@
-import { Theme } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
-import Toolbar from '@mui/material/Toolbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import React, { FC, useCallback } from 'react';
+import React, { type FC, type PropsWithChildren } from 'react';
 
 import browser from 'scripts/browser';
 
 export const DRAWER_WIDTH = 240;
 
 export interface ResponsiveDrawerProps {
-    hasSecondaryToolBar?: boolean
     open: boolean
     onClose: () => void
     onOpen: () => void
 }
 
-const ResponsiveDrawer: FC<ResponsiveDrawerProps> = ({
+const ResponsiveDrawer: FC<PropsWithChildren<ResponsiveDrawerProps>> = ({
     children,
-    hasSecondaryToolBar = false,
     open = false,
     onClose,
     onOpen
 }) => {
-    const isSmallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'));
-    const isLargeScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
+    const isMediumScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
-    const getToolbarStyles = useCallback((theme: Theme) => ({
-        marginBottom: (hasSecondaryToolBar && !isLargeScreen) ? theme.spacing(6) : 0
-    }), [ hasSecondaryToolBar, isLargeScreen ]);
-
-    return ( isSmallScreen ? (
+    return ( isMediumScreen ? (
         /* DESKTOP DRAWER */
         <Drawer
             sx={{
@@ -39,17 +31,13 @@ const ResponsiveDrawer: FC<ResponsiveDrawerProps> = ({
                 flexShrink: 0,
                 '& .MuiDrawer-paper': {
                     width: DRAWER_WIDTH,
+                    paddingBottom: '4.2rem', // Padding for now playing bar
                     boxSizing: 'border-box'
                 }
             }}
-            variant='persistent'
+            variant='permanent'
             anchor='left'
-            open={open}
         >
-            <Toolbar
-                variant='dense'
-                sx={getToolbarStyles}
-            />
             {children}
         </Drawer>
     ) : (
@@ -65,10 +53,6 @@ const ResponsiveDrawer: FC<ResponsiveDrawerProps> = ({
                 keepMounted: true // Better open performance on mobile.
             }}
         >
-            <Toolbar
-                variant='dense'
-                sx={getToolbarStyles}
-            />
             <Box
                 role='presentation'
                 // Close the drawer when the content is clicked

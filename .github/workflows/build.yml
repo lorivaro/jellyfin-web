@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Setup node environment
-        uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
           node-version: 20
           check-latest: true
@@ -31,35 +31,18 @@ jobs:
         run: npm ci --no-audit
 
       - name: Run a production build
+        env:
+          JELLYFIN_VERSION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: npm run build:production
 
+      - name: Update config.json for testing
+        run: |
+          jq '.multiserver=true | .servers=["https://demo.jellyfin.org/unstable"]' dist/config.json > dist/config.tmp.json
+          mv dist/config.tmp.json dist/config.json
+
       - name: Upload artifact
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: jellyfin-web__prod
           path: |
             dist
-
-  pr_context:
-    name: Save PR context as artifact
-    if: ${{ always() && !cancelled() && github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    needs:
-      - run-build-prod
-
-    steps:
-      - name: Save PR context
-        env:
-          PR_NUMBER: ${{ github.event.number }}
-          PR_SHA: ${{ github.sha }}
-        run: |
-          echo $PR_NUMBER > PR_number
-          echo $PR_SHA > PR_sha
-
-      - name: Upload PR number as artifact
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
-        with:
-          name: PR_context
-          path: |
-            PR_number
-            PR_sha

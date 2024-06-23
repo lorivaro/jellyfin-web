@@ -22,7 +22,7 @@ export default function (view, params, tabContent) {
                     SortOrder: 'Ascending',
                     IncludeItemTypes: 'Trailer',
                     Recursive: true,
-                    Fields: 'PrimaryImageAspectRatio,SortName,BasicSyncInfo',
+                    Fields: 'PrimaryImageAspectRatio,SortName',
                     ImageTypeLimit: 1,
                     EnableImageTypes: 'Primary,Backdrop,Banner,Thumb',
                     StartIndex: 0
@@ -234,7 +234,7 @@ export default function (view, params, tabContent) {
                     name: globalize.translate('Name'),
                     id: 'SortName'
                 }, {
-                    name: globalize.translate('OptionImdbRating'),
+                    name: globalize.translate('OptionCommunityRating'),
                     id: 'CommunityRating,SortName'
                 }, {
                     name: globalize.translate('OptionDateAdded'),

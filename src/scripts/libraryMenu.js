@@ -1,6 +1,10 @@
 import escapeHtml from 'escape-html';
 import Headroom from 'headroom.js';
 
+import { getUserViewsQuery } from 'hooks/useUserViews';
+import { toApi } from 'utils/jellyfin-apiclient/compat';
+import { queryClient } from 'utils/query/queryClient';
+
 import dom from './dom';
 import layoutManager from '../components/layoutManager';
 import inputManager from './inputManager';
@@ -26,6 +30,7 @@ import '../elements/emby-button/paper-icon-button-light';
 import 'material-design-icons-iconfont';
 import '../styles/scrollstyles.scss';
 import '../styles/flexstyles.scss';
+import { EventType } from 'types/eventType';
 
 function renderHeader() {
     let html = '';
@@ -383,28 +388,29 @@ function onSidebarLinkClick() {
 }
 
 function getUserViews(apiClient, userId) {
-    return apiClient.getUserViews({}, userId).then(function (result) {
-        const items = result.Items;
-        const list = [];
+    return queryClient
+        .fetchQuery(getUserViewsQuery(toApi(apiClient), userId))
+        .then(function (result) {
+            const items = result.Items;
+            const list = [];
 
-        for (let i = 0, length = items.length; i < length; i++) {
-            const view = items[i];
-            list.push(view);
+            for (let i = 0, length = items.length; i < length; i++) {
+                const view = items[i];
+                list.push(view);
 
-            if (view.CollectionType == 'livetv') {
-                view.ImageTags = {};
-                view.icon = 'live_tv';
-                const guideView = Object.assign({}, view);
-                guideView.Name = globalize.translate('Guide');
-                guideView.ImageTags = {};
-                guideView.icon = 'dvr';
-                guideView.url = '#/livetv.html?tab=1';
-                list.push(guideView);
+                if (view.CollectionType == 'livetv') {
+                    view.icon = 'live_tv';
+                    const guideView = Object.assign({}, view);
+                    guideView.Name = globalize.translate('Guide');
+                    guideView.ImageTags = {};
+                    guideView.icon = 'dvr';
+                    guideView.url = '#/livetv.html?tab=1';
+                    list.push(guideView);
+                }
             }
-        }
 
-        return list;
-    });
+            return list;
+        });
 }
 
 function showBySelector(selector, show) {
@@ -421,22 +427,8 @@ function showBySelector(selector, show) {
 
 function updateLibraryMenu(user) {
     if (!user) {
-        showBySelector('.libraryMenuDownloads', false);
-        showBySelector('.lnkSyncToOtherDevices', false);
         showBySelector('.userMenuOptions', false);
         return;
-    }
-
-    if (user.Policy.EnableContentDownloading) {
-        showBySelector('.lnkSyncToOtherDevices', true);
-    } else {
-        showBySelector('.lnkSyncToOtherDevices', false);
-    }
-
-    if (user.Policy.EnableContentDownloading && appHost.supports('sync')) {
-        showBySelector('.libraryMenuDownloads', true);
-    } else {
-        showBySelector('.libraryMenuDownloads', false);
     }
 
     const userId = Dashboard.getCurrentUserId();
@@ -711,6 +703,8 @@ const skinHeader = document.querySelector('.skinHeader');
 let requiresUserRefresh = true;
 
 function setTabs (type, selectedIndex, builder) {
+    Events.trigger(document, EventType.SET_TABS, type ? [ type, selectedIndex, builder()] : []);
+
     import('../components/maintabsmanager').then((mainTabsManager) => {
         if (type) {
             mainTabsManager.setTabs(viewManager.currentView(), selectedIndex, builder, function () {
