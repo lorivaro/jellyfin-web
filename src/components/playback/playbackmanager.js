@@ -9,7 +9,7 @@ import itemHelper from '../itemHelper';
 import { pluginManager } from '../pluginManager';
 import PlayQueueManager from './playqueuemanager';
 import * as userSettings from '../../scripts/settings/userSettings';
-import globalize from '../../scripts/globalize';
+import globalize from '../../lib/globalize';
 import loading from '../loading/loading';
 import { appHost } from '../apphost';
 import ServerConnections from '../ServerConnections';
@@ -31,6 +31,10 @@ function enableLocalPlaylistManagement(player) {
     }
 
     return player.isLocalPlayer;
+}
+
+function supportsPhysicalVolumeControl(player) {
+    return player.isLocalPlayer && appHost.supports('physicalvolumecontrol');
 }
 
 function bindToFullscreenChange(player) {
@@ -1157,7 +1161,7 @@ class PlaybackManager {
         self.setVolume = function (val, player) {
             player = player || self._currentPlayer;
 
-            if (player) {
+            if (player && !supportsPhysicalVolumeControl(player)) {
                 player.setVolume(val);
             }
         };
@@ -1165,15 +1169,17 @@ class PlaybackManager {
         self.getVolume = function (player) {
             player = player || self._currentPlayer;
 
-            if (player) {
+            if (player && !supportsPhysicalVolumeControl(player)) {
                 return player.getVolume();
             }
+
+            return 1;
         };
 
         self.volumeUp = function (player) {
             player = player || self._currentPlayer;
 
-            if (player) {
+            if (player && !supportsPhysicalVolumeControl(player)) {
                 player.volumeUp();
             }
         };
@@ -1181,7 +1187,7 @@ class PlaybackManager {
         self.volumeDown = function (player) {
             player = player || self._currentPlayer;
 
-            if (player) {
+            if (player && !supportsPhysicalVolumeControl(player)) {
                 player.volumeDown();
             }
         };
@@ -1856,6 +1862,15 @@ class PlaybackManager {
                         SortBy: options.shuffle ? 'Random' : 'SortName',
                         MediaTypes: 'Audio'
                     }, queryOptions));
+                case 'Genre':
+                    return getItemsForPlayback(serverId, mergePlaybackQueries({
+                        GenreIds: firstItem.Id,
+                        ParentId: firstItem.ParentId,
+                        Filters: 'IsNotFolder',
+                        Recursive: true,
+                        SortBy: options.shuffle ? 'Random' : 'SortName',
+                        MediaTypes: 'Video'
+                    }, queryOptions));
                 case 'Series':
                 case 'Season':
                     return getSeriesOrSeasonPlaybackPromise(firstItem, options, items);
@@ -2295,7 +2310,7 @@ class PlaybackManager {
                     return playAfterBitrateDetect(bitrate, item, playOptions, onPlaybackStartedFn, prevSource)
                         .catch(onPlaybackRejection);
                 })
-                .finally(() => {
+                .catch(() => {
                     if (playOptions.fullscreen) {
                         loading.hide();
                     }
@@ -2353,8 +2368,6 @@ class PlaybackManager {
                     resolve();
                     return;
                 }
-
-                loading.hide();
 
                 const options = Object.assign({}, playOptions);
 
@@ -2498,7 +2511,7 @@ class PlaybackManager {
             return Promise.resolve()
                 .then(() => {
                     if (!isServerItem(item) || itemHelper.isLocalItem(item)) {
-                        return Promise.reject('skip bitrate detection');
+                        return Promise.reject(new Error('skip bitrate detection'));
                     }
 
                     return apiClient.getEndpointInfo()
@@ -2510,7 +2523,7 @@ class PlaybackManager {
                                 });
                             }
 
-                            return Promise.reject('skip bitrate detection');
+                            return Promise.reject(new Error('skip bitrate detection'));
                         });
                 })
                 .catch(() => getSavedMaxStreamingBitrate(apiClient, mediaType));

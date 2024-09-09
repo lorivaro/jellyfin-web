@@ -133,6 +133,18 @@ class AppSettings {
     }
 
     /**
+     * Get or set preferred transcode video codec.
+     * @param {string|undefined} val - Preferred transcode video codec or undefined.
+     * @return {string} Preferred transcode video codec.
+     */
+    preferredTranscodeVideoCodec(val) {
+        if (val !== undefined) {
+            return this.set('preferredTranscodeVideoCodec', val);
+        }
+        return this.get('preferredTranscodeVideoCodec') || '';
+    }
+
+    /**
      * Get or set preferred transcode audio codec in video playback.
      * @param {string|undefined} val - Preferred transcode audio codec or undefined.
      * @return {string} Preferred transcode audio codec.
@@ -168,6 +180,19 @@ class AppSettings {
         }
 
         return toBoolean(this.get('enableTrueHd'), false);
+    }
+
+    /**
+     * Get or set 'Enable H.264 High 10 Profile' state.
+     * @param {boolean|undefined} val - Flag to enable 'Enable H.264 High 10 Profile' or undefined.
+     * @return {boolean} 'Enable H.264 High 10 Profile' state.
+     */
+    enableHi10p(val) {
+        if (val !== undefined) {
+            return this.set('enableHi10p', val.toString());
+        }
+
+        return toBoolean(this.get('enableHi10p'), false);
     }
 
     set(name, value, userId) {
