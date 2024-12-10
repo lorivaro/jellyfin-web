@@ -15,7 +15,8 @@ const Assets = [
     '@jellyfin/libass-wasm/dist/js/subtitles-octopus-worker.js',
     '@jellyfin/libass-wasm/dist/js/subtitles-octopus-worker.wasm',
     '@jellyfin/libass-wasm/dist/js/subtitles-octopus-worker-legacy.js',
-    'pdfjs-dist/build/pdf.worker.js'
+    'pdfjs-dist/build/pdf.worker.js',
+    'libpgs/dist/libpgs.worker.js'
 ];
 
 const DEV_MODE = process.env.NODE_ENV !== 'production';
@@ -72,8 +73,7 @@ const config = {
         new CopyPlugin({
             patterns: [
                 {
-                    from: 'themes/',
-                    to: 'themes/'
+                    from: 'themes/**/*.{css,jpg}'
                 },
                 {
                     from: 'assets/**',
@@ -86,7 +86,13 @@ const config = {
                     from: '*.*',
                     globOptions: {
                         dot: true,
-                        ignore: ['**.js', '**.html']
+                        ignore: [
+                            '**.js',
+                            '**.jsx',
+                            '**.html',
+                            '**.ts',
+                            '**.tsx'
+                        ]
                     }
                 }
             ]
@@ -337,7 +343,9 @@ const config = {
 };
 
 if (!DEV_MODE) {
-    config.plugins.push(new MiniCssExtractPlugin());
+    config.plugins.push(new MiniCssExtractPlugin({
+        filename: '[name].[contenthash].css'
+    }));
 }
 
 module.exports = config;

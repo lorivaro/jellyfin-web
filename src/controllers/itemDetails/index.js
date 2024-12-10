@@ -582,11 +582,13 @@ function reloadFromItem(instance, page, params, item, user) {
         page.querySelector('.btnSplitVersions').classList.add('hide');
     }
 
-    if (itemContextMenu.getCommands(getContextMenuOptions(item, user)).length) {
-        hideAll(page, 'btnMoreCommands', true);
-    } else {
-        hideAll(page, 'btnMoreCommands');
-    }
+    itemContextMenu.getCommands(getContextMenuOptions(item, user)).then(commands => {
+        if (commands.length) {
+            hideAll(page, 'btnMoreCommands', true);
+        } else {
+            hideAll(page, 'btnMoreCommands');
+        }
+    });
 
     const itemBirthday = page.querySelector('#itemBirthday');
 
@@ -1318,7 +1320,7 @@ function renderTags(page, item) {
             serverId: item.ServerId
         });
         tagElements.push(
-            `<a href="${href}" class="button-link emby-button" is="emby-linkbutton">`
+            `<a href="${href}" class="button-link" is="emby-linkbutton">`
             + escapeHtml(tag)
             + '</a>'
         );
@@ -1735,7 +1737,7 @@ function renderCollectionItemType(page, parentItem, type, items) {
         items: items,
         shape: shape,
         showTitle: true,
-        showYear: type.mediaType === 'Video' || type.type === 'Series',
+        showYear: type.mediaType === 'Video' || type.type === 'Series' || type.type === 'Movie',
         centerText: true,
         lazy: true,
         showDetailsMenu: true,
@@ -2009,6 +2011,7 @@ export default function (view, params) {
         const downloadHref = getApiClient().getItemDownloadUrl(currentItem.Id);
         download([{
             url: downloadHref,
+            item: currentItem,
             itemId: currentItem.Id,
             serverId: currentItem.ServerId,
             title: currentItem.Name,
